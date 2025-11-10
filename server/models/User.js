@@ -10,14 +10,10 @@ const userSchema = new Schema({
     lowercase: true,
     trim: true 
   },
- password: { 
+  password: { 
     type: String, 
-    required: [true, "La contraseña es obligatoria."],
-    
-    minlength: [8, "La contraseña debe tener al menos 8 caracteres."],
-    maxlength: [32, "La contraseña no debe exceder los 32 caracteres."]
-  
-  },
+    required: [true, "La contraseña es obligatoria."]
+  }
 });
 
 // Hook "pre-save": Se ejecuta ANTES de guardar un usuario
