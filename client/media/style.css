@@ -51,6 +51,118 @@ body {
     gap: 30px; /* Espacio entre tarjetas */
 }
 
+
+/* --- ESTILOS DEL FOOTER --- */
+.footer {
+    background-color: var(--colorSecundario);
+    /* Borde superior neón para separarlo */
+    border-top: 1px solid var(--colorPrimario);
+    box-shadow: 0 -5px 15px -5px rgba(var(--colorPrimario-rgb), 0.4);
+    padding: 30px 15px;
+    margin-top: 60px; /* Espacio para separarlo del contenido */
+    width: 100%;
+    text-align: center;
+}
+
+.footer p {
+    margin: 10px 0;
+    line-height: 1.6; /* Mejora la legibilidad */
+    color: var(--colorTexto);
+}
+
+.footer .link {
+    color: var(--colorTexto);
+    text-decoration: none;
+    font-weight: 700;
+    margin: 0 3px;
+    font-size: 0.9rem;
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.footer .link:hover {
+    color: var(--colorAcento);
+    text-shadow: 0 0 5px var(--colorAcento);
+}
+
+
+/* --- ESTILOS DEL BANNER PRINCIPAL --- */
+.main-banner {
+    width: 100%;
+    padding: 50px 5%; /* 5% de espacio a los lados */
+    background-color: var(--colorSecundario); /* Fondo oscuro */
+    /* Damos espacio para el auth-container flotante */
+    margin-top: 80px; 
+    margin-bottom: 30px; /* Espacio antes de los productos */
+}
+
+.banner-content {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap; /* Para que se apilen en pantallas pequeñas */
+    gap: 40px; /* Espacio entre el texto y el logo */
+    max-width: 1300px; /* Ancho máximo del contenido */
+    margin: 0 auto; /* Centra el contenido */
+}
+
+.banner-text-box {
+    flex: 1; /* Ocupa el espacio disponible */
+    min-width: 320px; /* Ancho mínimo */
+    max-width: 600px;
+    padding: 30px;
+    border: 2px solid var(--colorPrimario);
+    border-radius: 8px;
+    box-shadow: 0 0 15px var(--colorPrimario), inset 0 0 10px rgba(var(--colorPrimario-rgb), 0.5);
+    text-align: left;
+    color: var(--colorTexto);
+}
+
+.banner-text-box h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+}
+
+.banner-text-box h1 {
+    font-size: 2.2rem; /* Tamaño grande para el título */
+    color: var(--colorPrimario);
+    font-weight: bold;
+    text-shadow: 0 0 8px var(--colorPrimario);
+    margin: 0 0 20px 0;
+    line-height: 1.3;
+}
+
+.banner-text-box p {
+    font-size: 1.1rem;
+    color: var(--colorAcento); /* Color naranja de acento */
+    font-weight: bold;
+    margin: 0;
+}
+
+.banner-logo-box {
+    flex: 1; /* Ocupa el espacio disponible */
+    min-width: 320px; /* Ancho mínimo */
+    max-width: 500px;
+    display: grid;
+    place-items: center;
+}
+
+.banner-logo-box img {
+    max-width: 100%;
+    height: auto;
+    
+    /* filter: drop-shadow(0 0 10px var(--colorPrimario)); */
+}
+
+/* Estilo para "Team TecoByte..." */
+.footer .text-neon {
+    color: var(--colorPrimario);
+    font-weight: bold;
+    font-size: 1.1rem;
+    text-shadow: 0 0 5px var(--colorPrimario);
+    letter-spacing: 1px;
+}
+
 /* Tarjeta de producto individual (el 'content' div de index.js) */
 .cart-products > div {
     width: 280px;
