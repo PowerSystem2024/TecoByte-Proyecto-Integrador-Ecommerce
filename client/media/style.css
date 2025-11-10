@@ -231,24 +231,30 @@ body {
     opacity: 1;
 }
 
-/* --- BOTÓN FLOTANTE DEL CARRITO --- */
+/* --- BOTÓN FLOTANTE DEL CARRITO (CORREGIDO v2) --- */
 .cart-btn {
     position: fixed;
-    top: 90vh;
-    right: 20px;
+    bottom: 30px;
+    right: 30px;
+    
+    /* --- Simplificado: Quitar padding, usar height/width fijos --- */
+    width: 52px;  /* Tamaño total del círculo */
+    height: 52px; /* Tamaño total del círculo */
+    padding: 0;   /* Quitar padding para no confundir */
+    
     background-color: var(--colorPrimario);
     color: var(--colorSecundario);
-    padding: 12px;
     border-radius: 50%;
-    height: 28px;
-    width: 28px;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out, background-color 0.2s ease-in-out;
     transform: scale(1);
     z-index: 1000;
+    
+    /* --- Centrado (la parte importante) --- */
     display: grid;
     place-items: center;
-    font-size: 20px;
-    line-height: 1;
+    font-size: 24px;  /* Aumentar un poco el tamaño del emoji */
+    line-height: 1;   /* Asegurar que la línea no añada espacio extra */
+
     box-shadow: 0 0 10px var(--colorPrimario), 0 0 15px var(--colorPrimario);
     cursor: pointer;
 }
@@ -259,21 +265,63 @@ body {
     background-color: var(--colorAcento);
 }
 
+
+/* --- ESTILOS DE FILTRO --- */
+.filter-container {
+    text-align: center;
+    margin-bottom: 30px;
+    margin-top: -10px; /* Lo sube un poco */
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap; /* Para pantallas pequeñas */
+}
+
+.filter-btn {
+    background-color: var(--colorSecundario);
+    border: 1px solid var(--colorPrimario);
+    color: var(--colorTexto);
+    padding: 10px 20px;
+    font-family: var(--tipografia);
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.filter-btn:hover {
+    background-color: var(--colorPrimario);
+    color: var(--colorSecundario);
+    box-shadow: 0 0 10px var(--colorPrimario);
+}
+
+/* Estilo para el botón que está seleccionado */
+.filter-btn.active {
+    background-color: var(--colorPrimario);
+    color: var(--colorSecundario);
+    box-shadow: 0 0 10px var(--colorPrimario);
+}
+
+/* --- CSS del Contador (Ajustado a la nueva posición) --- */
 .cart-counter {
     display: none;
     position: fixed;
-    top: 89vh;
-    right: 18px;
+    
+    /* Nuevas coordenadas basadas en el botón de 52px */
+    bottom: 68px; /* (30px del botón + 52px de alto) - 14px (mitad de su propia altura) */
+    right: 16px;  /* 30px del botón - 14px (mitad de su propio ancho) */
+    
     color: var(--colorSecundario);
     text-align: center;
     background-color: var(--colorAcento);
     padding: 4px;
     border-radius: 50%;
-    height: 20px;
-    width: 20px;
+    height: 20px; /* 28px total con padding */
+    width: 20px;  /* 28px total con padding */
     font-size: 12px;
     font-weight: bold;
-    z-index: 2000;
+    z-index: 2000; 
     border: 1px solid var(--colorSecundario);
 }
 
