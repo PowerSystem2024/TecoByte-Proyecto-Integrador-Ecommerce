@@ -1,23 +1,21 @@
 // Importación de módulos
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
+const path = require("path"); // Asegúrate de que path esté importado
 const { MercadoPagoConfig, Preference } = require("mercadopago");
-
-// --- NUEVO: Importaciones para Autenticación y Base de Datos ---
 const mongoose = require("mongoose");
-const session = require("express-session"); // Para manejar sesiones de usuario
-const bcrypt = require("bcryptjs"); // Para comparar contraseñas en el login
-const User = require("./models/User"); // Importamos nuestro modelo de Usuario
+const session = require("express-session");
+const bcrypt = require("bcryptjs");
+const User = require("./models/User");
 
-// --- NUEVO: Conexión a MongoDB ---
+// Conexión a MongoDB
 mongoose.connect("mongodb://localhost:27017/tuEcommerceDB")
   .then(() => console.log("Conectado a MongoDB ✅"))
   .catch(err => console.error("Error al conectar a MongoDB ❌", err));
 
 const app = express();
 
-// Configuración del cliente de MercadoPago (SDK v2)
+// Configuración del cliente de MercadoPago
 const client = new MercadoPagoConfig({
   accessToken:
     "APP_USR-8138947811183604-090515-899a7a5086da64a9e4888eca5e229625-2665253413",
@@ -26,11 +24,15 @@ const client = new MercadoPagoConfig({
 // Middlewares
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-// Corregido para apuntar a la carpeta /client
-app.use(express.static(path.join(__dirname, "../client")));
+
+// --- ¡¡LÍNEA CRÍTICA MODIFICADA PARA VERCEL!! ---
+// En lugar de __dirname, usamos process.cwd() (el directorio raíz del proyecto)
+app.use(express.static(path.resolve(process.cwd(), "client")));
+// ------------------------------------------------
+
 app.use(cors());
 
-// --- NUEVO: Configuración de Express Session ---
+// Configuración de Express Session
 app.use(session({
   secret: "tu_secreto_aqui_super_seguro", // ¡Cambia esto!
   resave: false,
@@ -41,7 +43,7 @@ app.use(session({
   }
 }));
 
-// --- NUEVO: Middleware para verificar si el usuario está autenticado ---
+// Middleware de Autenticación
 const isAuthenticated = (req, res, next) => {
   if (req.session.userId) {
     return next();
@@ -49,57 +51,67 @@ const isAuthenticated = (req, res, next) => {
   res.status(401).json({ error: "No autorizado. Debes iniciar sesión." });
 };
 
-// --- RUTAS ---
-
-// Ruta principal para servir el archivo HTML
+// --- RUTAS PÚBLICAS ---
+// Nota: Ahora que express.static funciona, estas rutas 
+// podrían no ser necesarias si el 'index.html' está en la raíz de 'client'
+// Pero las dejamos por si acaso y para las rutas de /feedback
 app.get("/", (req, res) => {
-  res.sendFile(path.resolve(__dirname, "..", "client", "media", "index.html"));
+  res.sendFile(path.resolve(process.cwd(), "client", "media", "index.html"));
 });
 
-// --- NUEVO: Rutas de API para Autenticación ---
+app.get("/feedback", (req, res) => {
+  res.sendFile(path.resolve(process.cwd(), "client", "media", "feedback.html"));
+});
+
+// --- RUTAS DE API DE AUTENTICACIÓN ---
 
 // RUTA DE REGISTRO
 app.post("/api/register", async (req, res) => {
   try {
     const { email, password } = req.body;
+    
     if (!email || !password) {
-      return res.status(400).json({ message: "Email y contraseña son requeridos." });
+        return res.status(400).json({ message: "Email y contraseña son requeridos." });
     }
+    if (password.length < 8) {
+        return res.status(400).json({ message: "La contraseña debe tener al menos 8 caracteres." });
+    }
+    if (password.length > 32) {
+        return res.status(400).json({ message: "La contraseña no debe exceder los 32 caracteres." });
+    }
+
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "El email ya está en uso." });
     }
     
-    // La contraseña se hashea automáticamente por el hook en User.js
-    const newUser = new User({ email, password });
-    await newUser.save();
+    const newUser = new User({ email, password }); 
+    await newUser.save(); 
+    
     res.status(201).json({ message: "Usuario registrado con éxito. Ahora puedes iniciar sesión." });
+  
   } catch (error) {
+    if (error.name === 'ValidationError') {
+      const message = Object.values(error.errors).map(val => val.message)[0];
+      return res.status(400).json({ message: message });
+    }
     console.error("Error en /api/register:", error);
-    res.status(500).json({ error: "Error en el registro." });
+    res.status(500).json({ error: "Error interno en el registro." });
   }
 });
 
-// RUTA DE LOGIN
+
 app.post("/api/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email y contraseña son requeridos." });
-    }
+    if (!email || !password) return res.status(400).json({ message: "Email y contraseña son requeridos." });
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "Email o contraseña incorrectos." });
-    }
+    if (!user) return res.status(400).json({ message: "Email o contraseña incorrectos." });
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Email o contraseña incorrectos." });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Email o contraseña incorrectos." });
     
-    // Guardar usuario en la sesión
     req.session.userId = user._id;
     req.session.userEmail = user.email;
-
     res.status(200).json({ message: "Login exitoso.", email: user.email });
   } catch (error) {
     console.error("Error en /api/login:", error);
@@ -107,52 +119,127 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// RUTA DE LOGOUT
 app.post("/api/logout", (req, res) => {
   req.session.destroy((err) => {
-    if (err) {
-      return res.status(500).json({ message: "Error al cerrar sesión." });
-    }
-    res.clearCookie('connect.sid'); // Limpia la cookie
+    if (err) return res.status(500).json({ message: "Error al cerrar sesión." });
+    res.clearCookie('connect.sid'); 
     res.status(200).json({ message: "Sesión cerrada exitosamente." });
   });
 });
 
-// RUTA PARA VERIFICAR ESTADO DE LA SESIÓN (para el frontend)
 app.get("/api/session-status", (req, res) => {
   if (req.session.userId) {
-    res.status(200).json({
-      isLoggedIn: true,
-      email: req.session.userEmail,
-    });
+    res.status(200).json({ isLoggedIn: true, email: req.session.userEmail });
   } else {
     res.status(200).json({ isLoggedIn: false });
   }
 });
 
+// --- RUTAS DE API PARA EL CARRITO (Protegidas) ---
 
-// --- MODIFICADO: Endpoint para crear preferencia (AHORA PROTEGIDO) ---
+app.get("/api/cart", isAuthenticated, async (req, res) => {
+  try {
+    const user = await User.findById(req.session.userId);
+    if (!user.cart) {
+        user.cart = [];
+    }
+    res.status(200).json(user.cart);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el carrito." });
+  }
+});
+
+app.post("/api/cart/add", isAuthenticated, async (req, res) => {
+  const productToAdd = req.body; 
+  try {
+    const user = await User.findById(req.session.userId);
+
+    if (!user.cart) {
+        user.cart = [];
+    }
+
+    const productIndex = user.cart.findIndex(item => item.id === productToAdd.id);
+    
+    if (productIndex > -1) {
+      user.cart[productIndex].quanty++;
+    } else {
+      user.cart.push({ ...productToAdd, quanty: 1 });
+    }
+    
+    await user.save(); 
+    res.status(200).json(user.cart); 
+  } catch (error) {
+    console.error("Error en /api/cart/add:", error);
+    res.status(500).json({ error: "Error al añadir producto." });
+  }
+});
+
+app.put("/api/cart/update/:productId", isAuthenticated, async (req, res) => {
+  const { productId } = req.params;
+  const { action } = req.body; 
+  try {
+    const user = await User.findById(req.session.userId);
+    const productIndex = user.cart.findIndex(item => item.id == productId);
+
+    if (productIndex > -1) {
+      if (action === "increase") {
+        user.cart[productIndex].quanty++;
+      } else if (action === "decrease") {
+        if (user.cart[productIndex].quanty > 1) {
+          user.cart[productIndex].quanty--;
+        }
+      }
+      await user.save();
+      res.status(200).json(user.cart);
+    } else {
+      res.status(404).json({ error: "Producto no encontrado en el carrito." });
+    }
+  } catch (error) {
+    res.status(500).json({ error: "Error al actualizar cantidad." });
+  }
+});
+
+app.delete("/api/cart/remove/:productId", isAuthenticated, async (req, res) => {
+  const { productId } = req.params;
+  try {
+    const user = await User.findById(req.session.userId);
+    user.cart = user.cart.filter(item => item.id != productId);
+    await user.save();
+    res.status(200).json(user.cart); 
+  } catch (error) {
+    res.status(500).json({ error: "Error al eliminar producto." });
+  }
+});
+
+// --- RUTA DE PAGO ---
 app.post("/create_preference", isAuthenticated, async (req, res) => {
-  
   const preference = new Preference(client);
   try {
+    const user = await User.findById(req.session.userId);
+    if (!user.cart || user.cart.length === 0) {
+      return res.status(400).json({ error: "El carrito está vacío." });
+    }
+    
+    const items_list = user.cart.map(item => {
+      return {
+        title: item.productName,
+        quantity: Number(item.quanty),
+        currency_id: "ARS",
+        unit_price: Number(item.price),
+      }
+    });
+
     const data = await preference.create({
       body: {
-        items: [
-          {
-            title: req.body.description,
-            quantity: Number(req.body.quantity),
-            currency_id: "ARS",
-            unit_price: Number(req.body.price),
-          },
-        ],
+        items: items_list,
         back_urls: {
-          success: "http://localhost:8080/feedback", // Deberías crear esta página
+          success: "http://localhost:8080/feedback", 
           failure: "http://localhost:8080/feedback",
           pending: "http://localhost:8080/feedback",
         },
+        auto_return: "approved", 
         payer: {
-          email: req.session.userEmail // Asociamos el pago al email del usuario
+          email: req.session.userEmail 
         }
       },
     });
